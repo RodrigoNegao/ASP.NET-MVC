@@ -14,9 +14,9 @@ namespace WebApplication1.Controllers
         ObjectCache cache = MemoryCache.Default;
         List<Customer> customers;
 
-        public HomeController(){
+        public HomeController() {
             customers = cache["customers"] as List<Customer>;
-            if(customers == null)
+            if (customers == null)
             {
                 customers = new List<Customer>();
             }
@@ -29,6 +29,16 @@ namespace WebApplication1.Controllers
         public ActionResult Index()
         {
             return View();
+        }
+
+        public PartialViewResult Basket()
+        {
+            BasketViewModel model = new BasketViewModel();
+
+            model.BasketCount = 5;
+            model.BasketTotal = "R$100";
+
+            return PartialView(model);
         }
 
         public ActionResult About()
@@ -46,13 +56,29 @@ namespace WebApplication1.Controllers
             return View();
         }
 
-        public ActionResult ViewCustomer(string Name, string Telephone)
-        {
-            Customer customer = new Customer();
+        //Outdated
+        //public ActionResult ViewCustomer(string Name, string Telephone)
+        //{
+        //    Customer customer = new Customer();
 
-            customer.Id = Guid.NewGuid().ToString();
-            customer.Name = Name;
-            customer.Telephone = Telephone;
+        //    customer.Id = Guid.NewGuid().ToString();
+        //    customer.Name = Name;
+        //    customer.Telephone = Telephone;
+
+        //    return View(customer);
+        //}
+
+        public ActionResult ViewCustomer(string id)
+        {
+            Customer customer = customers.FirstOrDefault(c => c.Id == id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                return View(customer);
+            }
 
             return View(customer);
         }
@@ -65,11 +91,48 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public ActionResult AddCustomer(Customer customer)
         {
+            if (!ModelState.IsValid)
+            {
+                return View(customer);
+            }
+
             customer.Id = Guid.NewGuid().ToString();
             customers.Add(customer);
             SaveCache();
 
             return RedirectToAction("CustomerList");
+        }
+
+        public ActionResult EditCustomer(string id)
+        {
+            Customer customer = customers.FirstOrDefault(c => c.Id == id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                return View(customer);
+            }
+
+        }
+
+        [HttpPost]
+        public ActionResult EditCustomer(Customer customer, string Id)
+        {
+            var customerToEdit = customers.FirstOrDefault(c => c.Id == Id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                customerToEdit.Name = customer.Name;
+                customerToEdit.Telephone = customer.Telephone;
+                SaveCache();
+
+                return RedirectToAction("CustomerList");
+            }
         }
 
         public ActionResult CustomerList()
@@ -80,6 +143,37 @@ namespace WebApplication1.Controllers
             //customers.Add(new Customer() { Name = "Ellenize", Telephone = "111111" });
 
             return View(customers);
+
+        }
+
+        public ActionResult DeleteCustomer(string id)
+        {
+            Customer customer = customers.FirstOrDefault(c => c.Id == id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                return View(customer);
+            }
+
+        }
+
+        [HttpPost]
+        [ActionName("DeleteCustomer")]
+        public ActionResult ConfirmDeleteCustomer(string Id)
+        {
+            Customer customer = customers.FirstOrDefault(c => c.Id == Id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                customers.Remove(customer);
+                return RedirectToAction("CustomerList");
+            }
 
         }
     }
